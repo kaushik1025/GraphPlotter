@@ -10,15 +10,17 @@
   margin-left:150px;margin-right:150px;
   }
 
-  .axis path,
-  .axis line {
+  .xaxis path,
+  .xaxis line {
     fill: none;
     stroke: #000;
     shape-rendering: crispEdges;
-  }
-
-  .x.axis path {
-    display: none;
+  }  
+  .yaxis path,
+  .yaxis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
   }
 
   .line {
@@ -85,7 +87,7 @@
       events: {
         'blur input': 'evaluate',
         'focus input': 'evaluate',
-        'change input': 'evaluate',
+        'input input': 'evaluate',
         'click .evaluate': 'evaluate',
       },
 
@@ -94,24 +96,27 @@
         var rangeMin = $('#range-min').val();
         var rangeMax = $('#range-max').val();
 
-    		//replace '^' as power
-    		while(equation.indexOf('x^')!=-1){
-    			var oldPowerString = 'x^'+equation[equation.indexOf('x^')+2];
-    			var newPowerString = '';
-    			for(var i=0;i<equation[equation.indexOf('x^')+2]-1;i++){
-    				newPowerString = newPowerString+'x'+'*'
-    			}
-    			newPowerString = newPowerString+'x';
-    			equation = equation.replace(oldPowerString,newPowerString);
-    		}
-    		//append '*' to co-efficients 
-    		for(var i=0; i<equation.length;i++){
-    			if(equation[i] >= '0' && equation[i] <= '9'){
-    				if(equation[i+1]=='x'){
-    					equation = equation.slice(0,i+1)+'*'+equation.slice(i+1);
-    				}
-    			}
-    		};
+        m = equation.match(/x\^(\d+)/g)
+        if(m) {
+          for(var i=0;i<m.length;i++){
+            var power = parseInt(m[i].match(/x\^(\d+)/)[1]);
+            var newPowerString = '';
+            for(var j=0;j<power-1;j++){
+              newPowerString = newPowerString+'x'+'*'
+            }
+            newPowerString = newPowerString+'x';
+            equation = equation.replace(m[i],newPowerString)
+          };
+        }
+
+        m = equation.match(/(\d+)x/g)
+        if(m) {
+          for(var i=0;i<m.length;i++){
+            var coeff = parseInt(m[i].match(/(\d+)x/)[1]);
+            equation = equation.replace(m[i],coeff+'*x');
+          };
+        }
+
     		console.log("Reformatted Equation = "+equation);
 
         var data = [];
@@ -120,11 +125,16 @@
           data.push({x:(parseInt(x)),y:eval(equation)});
         }
         console.log("Data in EquationView = "+JSON.stringify(data));
-        this.graphDisplay(data);
+        var svg = d3.select("svg");
+        if(svg.empty()) {
+          this.graphDisplay(data);
+        }
+        else
+          this.updateGraph(data);  
       },
 
       graphDisplay: function (data) {
-		    $('.graph-container').empty();
+       // $('.graph-container').empty();
 
         function make_x_axis() {        
           return d3.svg.axis()
@@ -166,25 +176,25 @@
         var svg = d3.select(".graph-container").append("svg")
             .attr("width", width + margin.left + margin.right)
             .attr("height", height + margin.top + margin.bottom)
-        .append("g")
+            .append("g")
             .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
           x.domain([-50,50]);
           maxy = d3.max(data, function(d) { return d.y; });
           y.domain([-maxy,maxy]);
-
+          
           svg.append("path")
               .datum(data)
               .attr("class", "line")
               .attr("d", line);
 
           svg.append("g")
-            .attr("class", "axis")
+            .attr("class", "xaxis")
             .attr("transform", "translate(0," + (height/2) + ")")
             .call(xAxis);
 
           svg.append("g")
-            .attr("class", "axis")
+            .attr("class", "yaxis")
             .attr("transform", "translate(" + width/2 + ",0)")
             .call(yAxis);
 
@@ -202,14 +212,74 @@
                 .tickSize(-width, 0, 0)
                 .tickFormat("")
               ) 
-
       },
+
+      updateGraph: function (data) {
+
+        function make_y_axis() {        
+          return d3.svg.axis()
+            .scale(y)
+            .orient("left")
+            .ticks(10)
+        }
+
+        var margin = {top: 10, right: 20, bottom: 10, left: 50},
+            width = 960 - margin.left - margin.right,
+            height = 500 - margin.top - margin.bottom;
+
+        var x = d3.scale.linear()
+            .range([0, width]);
+
+        var y = d3.scale.linear()
+            .range([height, 0]);
+
+        var xAxis = d3.svg.axis()
+            .scale(x)
+            .orient("bottom");
+
+        var yAxis = d3.svg.axis()
+            .scale(y)
+            .orient("left");
+
+        var line = d3.svg.line()
+            .interpolate("basis")
+            .x(function(d) { return x(d.x); })
+            .y(function(d) { return y(d.y); });
+
+        var svg = d3.select("svg");
+
+          x.domain([-50,50]);
+          maxy = d3.max(data, function(d) { return d.y; });
+          y.domain([-maxy,maxy]);
+
+        svg.selectAll("path")
+          .data([data])
+          .attr("d", line)
+          .transition()
+          .duration(750);
+        
+        svg.select(".xaxis").transition() // change the x axis
+            .duration(750)
+            .call(xAxis);
+        
+        svg.select(".yaxis").transition() // change the y axis
+            .duration(750)
+            .call(yAxis);  
+
+        svg.select(".y.grid").transition()   
+          .duration(750)   
+          .call(make_y_axis()
+              .tickSize(-width, 0, 0)
+              .tickFormat("")
+            )           
+      },
+
+
 
       render: function () {
         var template = _.template($('#equation-template').html());
         this.$el.html(template);
       }
-
     });
 
     var equationView = new EquationView();
