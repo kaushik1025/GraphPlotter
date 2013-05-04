@@ -125,12 +125,7 @@
           data.push({x:(parseInt(x)),y:eval(equation)});
         }
         console.log("Data in EquationView = "+JSON.stringify(data));
-        var svg = d3.select("svg");
-        if(svg.empty()) {
-          this.graphDisplay(data);
-        }
-        else
-          this.updateGraph(data);  
+        this.graphDisplay(data);
       },
 
       graphDisplay: function (data) {
@@ -173,108 +168,67 @@
             .x(function(d) { return x(d.x); })
             .y(function(d) { return y(d.y); });
 
-        var svg = d3.select(".graph-container").append("svg")
-            .attr("width", width + margin.left + margin.right)
-            .attr("height", height + margin.top + margin.bottom)
-            .append("g")
-            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+        if(d3.select("svg").empty()) {
 
-          x.domain([-50,50]);
-          maxy = d3.max(data, function(d) { return d.y; });
-          y.domain([-maxy,maxy]);
-          
-          svg.append("path")
-              .datum(data)
-              .attr("class", "line")
-              .attr("d", line);
+          var svg = d3.select(".graph-container").append("svg")
+              .attr("width", width + margin.left + margin.right)
+              .attr("height", height + margin.top + margin.bottom)
+              .append("g")
+              .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-          svg.append("g")
-            .attr("class", "xaxis")
-            .attr("transform", "translate(0," + (height/2) + ")")
-            .call(xAxis);
+            x.domain([-50,50]);
+            maxy = d3.max(data, function(d) { return d.y; });
+            y.domain([-maxy,maxy]);
+            
+            svg.append("path")
+                .datum(data)
+                .attr("class", "line")
+                .attr("d", line);
 
-          svg.append("g")
-            .attr("class", "yaxis")
-            .attr("transform", "translate(" + width/2 + ",0)")
-            .call(yAxis);
+            svg.append("g")
+              .attr("class", "xaxis")
+              .attr("transform", "translate(0," + (height/2) + ")")
+              .call(xAxis);
 
-          svg.append("g")         
-            .attr("class", "grid")
-            .attr("transform", "translate(0," + height + ")")
-            .call(make_x_axis()
-                .tickSize(-height, 0, 0)
-                .tickFormat("")
-              )
+            svg.append("g")
+              .attr("class", "yaxis")
+              .attr("transform", "translate(" + width/2 + ",0)")
+              .call(yAxis);
 
-          svg.append("g")         
-            .attr("class", "grid")
-            .call(make_y_axis()
-                .tickSize(-width, 0, 0)
-                .tickFormat("")
-              ) 
+            svg.append("g")         
+              .attr("class", "grid")
+              .attr("transform", "translate(0," + height + ")")
+              .call(make_x_axis()
+                  .tickSize(-height, 0, 0)
+                  .tickFormat("")
+                )
+
+            svg.append("g")         
+              .attr("class", "grid")
+              .call(make_y_axis()
+                  .tickSize(-width, 0, 0)
+                  .tickFormat("")
+                ) 
+            }
+            else{
+              var svg = d3.select("svg");
+
+              x.domain([-50,50]);
+              maxy = d3.max(data, function(d) { return d.y; });
+              y.domain([-maxy,maxy]);
+
+            svg.selectAll("path")
+              .data([data])
+              .attr("d", line)
+              .transition()
+              .duration(750);
+            
+            svg.select(".yaxis").transition() // change the y axis
+                .duration(750)
+                .call(yAxis);  
+
+            }
       },
-
-      updateGraph: function (data) {
-
-        function make_y_axis() {        
-          return d3.svg.axis()
-            .scale(y)
-            .orient("left")
-            .ticks(10)
-        }
-
-        var margin = {top: 10, right: 20, bottom: 10, left: 50},
-            width = 960 - margin.left - margin.right,
-            height = 500 - margin.top - margin.bottom;
-
-        var x = d3.scale.linear()
-            .range([0, width]);
-
-        var y = d3.scale.linear()
-            .range([height, 0]);
-
-        var xAxis = d3.svg.axis()
-            .scale(x)
-            .orient("bottom");
-
-        var yAxis = d3.svg.axis()
-            .scale(y)
-            .orient("left");
-
-        var line = d3.svg.line()
-            .interpolate("basis")
-            .x(function(d) { return x(d.x); })
-            .y(function(d) { return y(d.y); });
-
-        var svg = d3.select("svg");
-
-          x.domain([-50,50]);
-          maxy = d3.max(data, function(d) { return d.y; });
-          y.domain([-maxy,maxy]);
-
-        svg.selectAll("path")
-          .data([data])
-          .attr("d", line)
-          .transition()
-          .duration(750);
-        
-        svg.select(".xaxis").transition() // change the x axis
-            .duration(750)
-            .call(xAxis);
-        
-        svg.select(".yaxis").transition() // change the y axis
-            .duration(750)
-            .call(yAxis);  
-
-        svg.select(".y.grid").transition()   
-          .duration(750)   
-          .call(make_y_axis()
-              .tickSize(-width, 0, 0)
-              .tickFormat("")
-            )           
-      },
-
-
 
       render: function () {
         var template = _.template($('#equation-template').html());
