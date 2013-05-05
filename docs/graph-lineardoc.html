@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>graph.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <link rel="stylesheet" media="all" href="public/stylesheets/normalize.css" />
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="page">
+
+      <div class="header">
+        
+          <h1>graph.js</h1>
+        
+
+        
+      </div>
+
+      
+        
+        <p>This is a simple Demo application that shows how to build a simple web app using only Javascript.
+I have used Backbone.js: A Client-side Javascript MV* framework and D3.js: A JavaScript library for manipulating documents based on data
+I have also used mocha.js: A feature-rich JavaScript test framework running on node and the browser.
+The web app built is a Graph Plotter that accepts any kind of polynomial equation and draws it&#39;s curve for the range given by user.</p>
+<p>HTML placeholders for the Graph and the Equation</p>
+
+        
+          <div class='highlight'><pre>&lt;div class=<span class="string">"graph-container"</span>&gt;<span class="xml"><span class="tag">&lt;/<span class="title">div</span>&gt;</span>
+<span class="tag">&lt;<span class="title">div</span> <span class="attribute">class</span>=<span class="value">"equation-container"</span>&gt;</span>
+  <span class="tag">&lt;<span class="title">div</span> <span class="attribute">class</span>=<span class="value">"equation-box"</span>&gt;</span><span class="tag">&lt;/<span class="title">div</span>&gt;</span>
+<span class="tag">&lt;/<span class="title">div</span>&gt;</span>
+
+</span></pre></div>
+        
+      
+        
+        <p>Create the Backbone View that displays and accepts the equation and will do the necessary calculations.</p>
+
+        
+          <div class='highlight'><pre>EquationView = Backbone.View.extend({
+  el: <span class="string">'.equation-box'</span>,</pre></div>
+        
+      
+        
+        <p>Add events that will call the function to process the values</p>
+
+        
+          <div class='highlight'><pre>  events: {
+    <span class="string">'input input'</span>: <span class="string">'getValues'</span>,
+    <span class="string">'click .evaluate'</span>: <span class="string">'getValues'</span>,
+  },</pre></div>
+        
+      
+        
+        <p>fetch values from the equation-box</p>
+
+        
+          <div class='highlight'><pre>  getValues : <span class="keyword">function</span>(){
+    <span class="keyword">var</span> equation = $(<span class="string">'#equation'</span>).val();
+    <span class="keyword">var</span> rangeMin = $(<span class="string">'#range-min'</span>).val();
+    <span class="keyword">var</span> rangeMax = $(<span class="string">'#range-max'</span>).val();
+
+    <span class="keyword">this</span>.graphDisplay(<span class="keyword">this</span>.evaluate(equation,rangeMin,rangeMax));
+  },</pre></div>
+        
+      
+        
+        <p>We need to format the equation string in a format that javascript can understand</p>
+
+        
+          <div class='highlight'><pre>  reformatEquation: <span class="keyword">function</span>(equation){</pre></div>
+        
+      
+        
+        <p>use Regex to find the exponent after &#39;^&#39; and replicate product of &#39;x&#39; those many times</p>
+
+        
+          <div class='highlight'><pre>    m = equation.match(<span class="regexp">/x\^(\d+)/g</span>)
+    <span class="keyword">if</span>(m) {
+      <span class="keyword">for</span>(<span class="keyword">var</span> i=<span class="number">0</span>;i&lt;m.length;i++){
+        <span class="keyword">var</span> power = parseInt(m[i].match(<span class="regexp">/x\^(\d+)/</span>)[<span class="number">1</span>]);
+        <span class="keyword">var</span> newPowerString = <span class="string">''</span>;
+        <span class="keyword">for</span>(<span class="keyword">var</span> j=<span class="number">0</span>;j&lt;power-<span class="number">1</span>;j++){
+          newPowerString = newPowerString+<span class="string">'x'</span>+<span class="string">'*'</span>
+        }
+        newPowerString = newPowerString+<span class="string">'x'</span>;
+        equation = equation.replace(m[i],newPowerString)
+      };
+    }</pre></div>
+        
+      
+        
+        <p>use Regex to find the co-efficient of &#39;x&#39; and rewrite it as a product</p>
+
+        
+          <div class='highlight'><pre>    m = equation.match(<span class="regexp">/(\d+)x/g</span>)
+    <span class="keyword">if</span>(m) {
+      <span class="keyword">for</span>(<span class="keyword">var</span> i=<span class="number">0</span>;i&lt;m.length;i++){
+        <span class="keyword">var</span> coeff = parseInt(m[i].match(<span class="regexp">/(\d+)x/</span>)[<span class="number">1</span>]);
+        equation = equation.replace(m[i],coeff+<span class="string">'*x'</span>);
+      };
+    }
+    <span class="keyword">return</span> equation;
+  },</pre></div>
+        
+      
+        
+        <p>This function accepts the equation values and returns the data in an array that is required by d3</p>
+
+        
+          <div class='highlight'><pre>  evaluate : <span class="keyword">function</span>(equation,rangeMin,rangeMax){
+    equation = <span class="keyword">this</span>.reformatEquation(equation);
+    <span class="keyword">var</span> data = [];
+    <span class="keyword">for</span>(<span class="keyword">var</span> x=rangeMin;x&lt;=rangeMax;x++){
+      data.push({x:(parseInt(x)),y:eval(equation)});
+    }
+    <span class="keyword">return</span> data;
+  },</pre></div>
+        
+      
+        
+        <p>This will accept the an Array &#39;data&#39; which will be used to draw the graphs using D3.js</p>
+
+        
+          <div class='highlight'><pre>  graphDisplay: <span class="function"><span class="keyword">function</span> <span class="params">(data)</span> {</span></pre></div>
+        
+      
+        
+        <p>functions to draw the grids</p>
+
+        
+          <div class='highlight'><pre>    <span class="function"><span class="keyword">function</span> <span class="title">make_x_axis</span><span class="params">()</span> {</span>        
+      <span class="keyword">return</span> d3.svg.axis()
+        .scale(x)
+         .orient(<span class="string">"bottom"</span>)
+         .ticks(<span class="number">10</span>)
+    }
+
+    <span class="function"><span class="keyword">function</span> <span class="title">make_y_axis</span><span class="params">()</span> {</span>        
+      <span class="keyword">return</span> d3.svg.axis()
+        .scale(y)
+        .orient(<span class="string">"left"</span>)
+        .ticks(<span class="number">10</span>)
+    }</pre></div>
+        
+      
+        
+        <p>set the exterior dimensions</p>
+
+        
+          <div class='highlight'><pre>    <span class="keyword">var</span> margin = {top: <span class="number">10</span>, right: <span class="number">20</span>, bottom: <span class="number">10</span>, left: <span class="number">50</span>},
+        width = <span class="number">960</span> - margin.left - margin.right,
+        height = <span class="number">500</span> - margin.top - margin.bottom;</pre></div>
+        
+      
+        
+        <p>set the range of X and Y axis and position them perpendicularly</p>
+
+        
+          <div class='highlight'><pre>    <span class="keyword">var</span> x = d3.scale.linear()
+        .range([<span class="number">0</span>, width]);
+
+    <span class="keyword">var</span> y = d3.scale.linear()
+        .range([height, <span class="number">0</span>]);
+
+    <span class="keyword">var</span> xAxis = d3.svg.axis()
+        .scale(x)
+        .orient(<span class="string">"bottom"</span>);
+
+    <span class="keyword">var</span> yAxis = d3.svg.axis()
+        .scale(y)
+        .orient(<span class="string">"left"</span>);</pre></div>
+        
+      
+        
+        <p>Instructions to draw the line. Return the co-ordinates.
+&#39;Basis&#39; is joining the dots smoothly</p>
+
+        
+          <div class='highlight'><pre>    <span class="keyword">var</span> line = d3.svg.line()
+        .interpolate(<span class="string">"basis"</span>)
+        .x(<span class="keyword">function</span>(d) { <span class="keyword">return</span> x(d.x); })
+        .y(<span class="keyword">function</span>(d) { <span class="keyword">return</span> y(d.y); });</pre></div>
+        
+      
+        
+        <p>check if drawing graph for the first time. In that case..</p>
+
+        
+          <div class='highlight'><pre>    <span class="keyword">if</span>(d3.select(<span class="string">"svg"</span>).empty()) {
+
+      <span class="keyword">var</span> svg = d3.select(<span class="string">".graph-container"</span>).append(<span class="string">"svg"</span>)
+          .attr(<span class="string">"width"</span>, width + margin.left + margin.right)
+          .attr(<span class="string">"height"</span>, height + margin.top + margin.bottom)
+          .append(<span class="string">"g"</span>)
+          .attr(<span class="string">"transform"</span>, <span class="string">"translate("</span> + margin.left + <span class="string">","</span> + margin.top + <span class="string">")"</span>);</pre></div>
+        
+      
+        
+        <p>set the domain of the axes</p>
+
+        
+          <div class='highlight'><pre>        x.domain([-<span class="number">50</span>,<span class="number">50</span>]);
+        maxy = d3.max(data, <span class="keyword">function</span>(d) { <span class="keyword">return</span> d.y; });
+        y.domain([-maxy,maxy]);</pre></div>
+        
+      
+        
+        <p>draw the graph as per the instructions set earlier.
+Also draw the gridss and the axes and position them in the centre of the chart</p>
+
+        
+          <div class='highlight'><pre>        svg.append(<span class="string">"path"</span>)
+            .datum(data)
+            .attr(<span class="string">"class"</span>, <span class="string">"line"</span>)
+            .attr(<span class="string">"d"</span>, line);
+
+        svg.append(<span class="string">"g"</span>)
+          .attr(<span class="string">"class"</span>, <span class="string">"xaxis"</span>)
+          .attr(<span class="string">"transform"</span>, <span class="string">"translate(0,"</span> + (height/<span class="number">2</span>) + <span class="string">")"</span>)
+          .call(xAxis);
+
+        svg.append(<span class="string">"g"</span>)
+          .attr(<span class="string">"class"</span>, <span class="string">"yaxis"</span>)
+          .attr(<span class="string">"transform"</span>, <span class="string">"translate("</span> + width/<span class="number">2</span> + <span class="string">",0)"</span>)
+          .call(yAxis);
+
+        svg.append(<span class="string">"g"</span>)         
+          .attr(<span class="string">"class"</span>, <span class="string">"grid"</span>)
+          .attr(<span class="string">"transform"</span>, <span class="string">"translate(0,"</span> + height + <span class="string">")"</span>)
+          .call(make_x_axis()
+              .tickSize(-height, <span class="number">0</span>, <span class="number">0</span>)
+              .tickFormat(<span class="string">""</span>)
+            )
+
+        svg.append(<span class="string">"g"</span>)         
+          .attr(<span class="string">"class"</span>, <span class="string">"grid"</span>)
+          .call(make_y_axis()
+              .tickSize(-width, <span class="number">0</span>, <span class="number">0</span>)
+              .tickFormat(<span class="string">""</span>)
+            ) 
+        }</pre></div>
+        
+      
+        
+        <p>In case of updating. Use transition() on the line instruction and redraw the axes
+Give some duration for the animation to occur</p>
+
+        
+          <div class='highlight'><pre>        <span class="keyword">else</span>{
+          <span class="keyword">var</span> svg = d3.select(<span class="string">"svg"</span>);
+
+          x.domain([-<span class="number">50</span>,<span class="number">50</span>]);
+          maxy = d3.max(data, <span class="keyword">function</span>(d) { <span class="keyword">return</span> d.y; });
+          y.domain([-maxy,maxy]);
+
+        svg.selectAll(<span class="string">"path"</span>)
+          .data([data])
+          .attr(<span class="string">"d"</span>, line)
+          .transition()
+          .duration(<span class="number">750</span>);
+        
+        svg.select(<span class="string">".yaxis"</span>).transition()
+            .duration(<span class="number">750</span>)
+            .call(yAxis);  
+
+        }
+  },</pre></div>
+        
+      
+        
+        <p>Render the equation box</p>
+
+        
+          <div class='highlight'><pre>  render: <span class="function"><span class="keyword">function</span> <span class="params">()</span> {</span>
+    <span class="keyword">var</span> template = _.template($(<span class="string">'#equation-template'</span>).html());
+    <span class="keyword">this</span>.$el.html(template);
+  }
+});
+
+<span class="keyword">var</span> equationView = <span class="keyword">new</span> EquationView();
+equationView.render();</pre></div>
+        
+      
+      <div class="fleur">h</div>
+    </div>
+  </div>
+</body>
+</html>
