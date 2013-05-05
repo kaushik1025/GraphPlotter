@@ -1,15 +1,16 @@
 GraphPlotter
 ============
 
-Plots a Curve for any given polynomial equation. Built using Backbone.js and D3.js
+Plots a Curve for any given polynomial equation.
+Libraries: Backbone.js (client side mvc), d3.js (dynamic graphs), mocha.js (unit testing) 
 
-Live Demo : http://graphplotter.ap01.aws.af.cm/
+Live Demo: http://graphplotter.ap01.aws.af.cm/
 
-TODO:
-1. Modularize Code
-2. Include more mathematical functions
-3. Animate Graph Update
+Features in v0.2
+-Graph Updation is animated using d3's transition()
+-Regex Fixes for exponents and co-efficients
+-Implemented unit test cases using mocha.js
 
 BUGS:
-1. Doesn't work for negative or greater than 9 exponential
-2. Improper range values crash the app
+-Doesn't work for negative exponential
+-Improper range values crash the app
