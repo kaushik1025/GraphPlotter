@@ -19,7 +19,9 @@
     <script src="libs/sinon/sinon.js"></script>
     <script>
         // Use the expect version of chai assertions - http://chaijs.com/api/bdd
+        mocha.setup({ui: 'bdd', ignoreLeaks: true});
         var expect = chai.expect;
+        var assert = chai.assert;
 
         // Tell mocha we want TDD syntax
         mocha.setup('tdd');

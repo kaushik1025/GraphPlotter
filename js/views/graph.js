@@ -14,7 +14,7 @@
       var rangeMin = $('#range-min').val();
       var rangeMax = $('#range-max').val();
 
-      this.evaluate(equation,rangeMin,rangeMax);
+      this.graphDisplay(this.evaluate(equation,rangeMin,rangeMax));
     },
 
     evaluate : function(equation,rangeMin,rangeMax){
@@ -23,7 +23,8 @@
       for(var x=rangeMin;x<=rangeMax;x++){
         data.push({x:(parseInt(x)),y:eval(equation)});
       }
-      this.graphDisplay(data);
+      console.log("Data = "+JSON.stringify(data));
+      return data;
     },
 
     reformatEquation: function(equation){
@@ -51,10 +52,6 @@
 
       console.log("Reformatted Equation = "+equation);
       return equation;
-    },
-
-    add: function(a,b){
-      return a+b;
     },
 
     graphDisplay: function (data) {
