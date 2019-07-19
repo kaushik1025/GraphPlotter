@@ -1,7 +1,7 @@
 GraphPlotter
 ============
 
-####Plots a Curve for any given polynomial equation.
+Plots a Curve for any given polynomial equation.
 ---------------------------------------------------
 
 **Javacript Framework/Libraries Used**:
@@ -12,11 +12,6 @@ GraphPlotter
  
 
 **Live Demo**: http://graphplotter.ap01.aws.af.cm/
-
-**Documentation**: Both same
-
--  [Docco - Linear Style](http://graphplotter.ap01.aws.af.cm/docs/linear/graph.html)
--  [Docco - Parallel Style](http://graphplotter.ap01.aws.af.cm/docs/parallel/graph.html)
 
 **Tests**: http://graphplotter.ap01.aws.af.cm/tests/test-runner.html
 
